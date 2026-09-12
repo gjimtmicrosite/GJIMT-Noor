@@ -16,80 +16,30 @@ const fullscreenAnswer = document.getElementById("fullscreenAnswer");
 const fullscreenStopBtn = document.getElementById("fullscreenStopBtn");
 
 
+let currentUtterance = null;
+
 let recognition = null;
 let isListening = false;
-let currentUtterance = null;
+let recognitionStarting = false;
+let speechSequenceId = 0;
+let speechUnlocked = false;
+
+const isTouchDevice =
+    ("ontouchstart" in window) ||
+    (navigator.maxTouchPoints > 0);
+
+const isIOS =
+    /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+const isAndroid =
+    /Android/i.test(navigator.userAgent);
+
+const isMobileDevice =
+    isIOS || isAndroid || window.matchMedia("(pointer: coarse)").matches;
+
 
 let stopCommandRecognition = null;
 let stopCommandActive = false;
-
-
-// Mobile speech helpers
-const isMobileDevice =
-    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
-    window.matchMedia("(pointer: coarse)").matches;
-
-let speechUnlocked = false;
-let speakingSequenceId = 0;
-
-function unlockSpeechEngine() {
-    if (speechUnlocked || !("speechSynthesis" in window)) return;
-
-    try {
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.resume();
-
-        // A nearly silent utterance started directly from a user gesture
-        // unlocks TTS on mobile Safari/Chrome for later async answers.
-        const warmup = new SpeechSynthesisUtterance(".");
-        warmup.volume = 0.01;
-        warmup.rate = 1;
-        warmup.pitch = 1;
-        window.speechSynthesis.speak(warmup);
-        speechUnlocked = true;
-    } catch (error) {
-        console.warn("Unable to warm up mobile speech:", error);
-    }
-}
-
-function splitSpeechIntoChunks(text, maxLength = 180) {
-    const prepared = prepareSpeechText(text).replace(/\s+/g, " ").trim();
-    if (prepared.length <= maxLength) return [prepared];
-
-    const sentences = prepared.match(/[^.!?]+[.!?]?/g) || [prepared];
-    const chunks = [];
-    let current = "";
-
-    for (const sentenceRaw of sentences) {
-        const sentence = sentenceRaw.trim();
-        if (!sentence) continue;
-
-        if ((current + " " + sentence).trim().length <= maxLength) {
-            current = (current + " " + sentence).trim();
-            continue;
-        }
-
-        if (current) chunks.push(current);
-
-        if (sentence.length <= maxLength) {
-            current = sentence;
-        } else {
-            const words = sentence.split(" ");
-            current = "";
-            for (const word of words) {
-                if ((current + " " + word).trim().length > maxLength) {
-                    if (current) chunks.push(current);
-                    current = word;
-                } else {
-                    current = (current + " " + word).trim();
-                }
-            }
-        }
-    }
-
-    if (current) chunks.push(current);
-    return chunks.length ? chunks : [prepared];
-}
 
 
 
@@ -489,57 +439,186 @@ function stopStopCommandRecognition() {
 }
 
 
+
 /* ---------------------------------------------------
-   TEXT TO SPEECH
+   MOBILE / IOS SPEECH OUTPUT UNLOCK
+   This never requests microphone permission.
 --------------------------------------------------- */
+
+function unlockNoorSpeech() {
+    if (speechUnlocked || !("speechSynthesis" in window)) return;
+
+    try {
+        const synth = window.speechSynthesis;
+        synth.cancel();
+        synth.resume();
+
+        const warmup = new SpeechSynthesisUtterance(" ");
+        warmup.lang = "en-IN";
+        warmup.volume = 0.01;
+        warmup.rate = 1;
+        warmup.pitch = 1;
+
+        synth.speak(warmup);
+
+        // Do not immediately cancel on iOS. A tiny silent utterance
+        // helps unlock the audio session for later asynchronous speech.
+        setTimeout(() => {
+            try {
+                if (synth.speaking) synth.cancel();
+            } catch (e) {}
+        }, 60);
+
+        speechUnlocked = true;
+    } catch (error) {
+        console.warn("Noor speech unlock:", error);
+    }
+}
+
+["pointerdown", "touchstart", "click", "keydown"].forEach(type => {
+    document.addEventListener(type, unlockNoorSpeech, {
+        once: true,
+        passive: true
+    });
+});
+
+
+/* ---------------------------------------------------
+   TEXT TO SPEECH - STABLE DESKTOP + IPHONE + ANDROID
+--------------------------------------------------- */
+
+function getNoorFemaleVoice() {
+    if (!("speechSynthesis" in window)) return null;
+
+    const voices = window.speechSynthesis.getVoices() || [];
+    if (!voices.length) return null;
+
+    // Preserve the earlier Noor female character as closely as each
+    // operating system allows.
+    const femaleNames = [
+        "heera", "veena", "zira", "samantha", "karen", "moira",
+        "tessa", "fiona", "victoria", "ava", "susan",
+        "google uk english female", "female"
+    ];
+
+    const byName = (voice) => {
+        const name = (voice.name || "").toLowerCase();
+        return femaleNames.some(f => name.includes(f));
+    };
+
+    return (
+        voices.find(v => /^en[-_]IN$/i.test(v.lang) && byName(v)) ||
+        voices.find(v => /^en[-_]IN$/i.test(v.lang) && /google/i.test(v.name)) ||
+        voices.find(v => /^en[-_]IN$/i.test(v.lang)) ||
+        voices.find(v => /^en[-_](GB|US|AU)$/i.test(v.lang) && byName(v)) ||
+        voices.find(v => /^en[-_]/i.test(v.lang) && byName(v)) ||
+        voices.find(v => /^en[-_]/i.test(v.lang)) ||
+        voices[0]
+    );
+}
+
+function splitNoorSpeech(text, maxLength = 170) {
+    const clean = prepareSpeechText(text).replace(/\s+/g, " ").trim();
+    if (!clean) return [];
+    if (clean.length <= maxLength) return [clean];
+
+    const sentences = clean.match(/[^.!?]+[.!?]?/g) || [clean];
+    const chunks = [];
+    let current = "";
+
+    for (const part of sentences) {
+        const sentence = part.trim();
+        if (!sentence) continue;
+
+        const candidate = (current + " " + sentence).trim();
+        if (candidate.length <= maxLength) {
+            current = candidate;
+            continue;
+        }
+
+        if (current) chunks.push(current);
+
+        if (sentence.length <= maxLength) {
+            current = sentence;
+        } else {
+            const words = sentence.split(/\s+/);
+            current = "";
+            for (const word of words) {
+                const next = (current + " " + word).trim();
+                if (next.length > maxLength && current) {
+                    chunks.push(current);
+                    current = word;
+                } else {
+                    current = next;
+                }
+            }
+        }
+    }
+
+    if (current) chunks.push(current);
+    return chunks;
+}
+
+function stopNoorSpeech() {
+    speechSequenceId += 1;
+
+    if ("speechSynthesis" in window) {
+        try {
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.resume();
+        } catch (e) {}
+    }
+
+    stopStopCommandRecognition();
+    setAssistantState("ready");
+    hideNoorFullscreen();
+}
 
 function speakText(text) {
     if (!("speechSynthesis" in window)) {
         setAssistantState("ready");
         addBotMessage(
-            "Voice playback is not supported in this browser. Please use Chrome, Edge or Safari on your phone.",
+            "Voice playback is not supported in this browser. Please use Chrome, Edge or Safari.",
             false
         );
         return;
     }
 
-    speakingSequenceId += 1;
-    const sequenceId = speakingSequenceId;
-
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.resume();
+    // Make absolutely sure microphone recognition has released its
+    // audio session before Noor starts speaking.
+    stopQuestionRecognition(false);
     stopStopCommandRecognition();
 
-    const chunks = splitSpeechIntoChunks(text, isMobileDevice ? 150 : 220);
-    const voices = window.speechSynthesis.getVoices();
+    const synth = window.speechSynthesis;
+    speechSequenceId += 1;
+    const sequence = speechSequenceId;
 
-    const preferredVoice =
-        voices.find(v => /en-IN/i.test(v.lang) && /female|zira|heera|veena|google|siri/i.test(v.name)) ||
-        voices.find(v => /en-IN/i.test(v.lang)) ||
-        voices.find(v => /^en[-_]/i.test(v.lang)) ||
-        voices.find(v => /English/i.test(v.name)) ||
-        voices[0];
+    try {
+        synth.cancel();
+        synth.resume();
+    } catch (e) {}
+
+    const chunks = splitNoorSpeech(text, isMobileDevice ? 145 : 210);
+    if (!chunks.length) return;
 
     let chunkIndex = 0;
-    let actuallyStarted = false;
+    let preferredVoice = getNoorFemaleVoice();
 
     setAssistantState("speaking");
     showNoorFullscreen(text);
 
-    // Continuous speech recognition while TTS is playing causes audio conflicts
-    // on many phones. Keep spoken "Stop Noor" on desktop; mobile uses the
-    // large Stop Voice button for reliable playback.
+    // Spoken "Stop Noor" remains available on desktop only.
+    // On phones simultaneous speech recognition can mute TTS.
     if (!isMobileDevice) {
-        startStopCommandRecognition();
-    } else if (fullscreenAnswer) {
-        const mobileHint = document.querySelector(".fullscreen-status");
-        if (mobileHint) {
-            mobileHint.innerHTML = '<span></span> Noor is speaking · Tap <b>Stop Voice</b> to stop on mobile';
-        }
+        setTimeout(() => {
+            if (sequence === speechSequenceId && synth.speaking) {
+                startStopCommandRecognition();
+            }
+        }, 700);
     }
 
-    const speakNextChunk = () => {
-        if (sequenceId !== speakingSequenceId) return;
+    const speakChunk = () => {
+        if (sequence !== speechSequenceId) return;
 
         if (chunkIndex >= chunks.length) {
             stopStopCommandRecognition();
@@ -550,47 +629,39 @@ function speakText(text) {
 
         currentUtterance = new SpeechSynthesisUtterance(chunks[chunkIndex]);
         currentUtterance.lang = "en-IN";
-        currentUtterance.rate = isMobileDevice ? 0.94 : 0.98;
-        currentUtterance.pitch = 1.03;
+        currentUtterance.rate = isMobileDevice ? 0.95 : 0.98;
+        currentUtterance.pitch = 1.05;
         currentUtterance.volume = 1;
 
-        if (preferredVoice) currentUtterance.voice = preferredVoice;
+        if (preferredVoice) {
+            currentUtterance.voice = preferredVoice;
+        }
+
+        let started = false;
 
         currentUtterance.onstart = () => {
-            actuallyStarted = true;
+            started = true;
             setAssistantState("speaking");
         };
 
         currentUtterance.onend = () => {
-            if (sequenceId !== speakingSequenceId) return;
+            if (sequence !== speechSequenceId) return;
             chunkIndex += 1;
-            setTimeout(speakNextChunk, isMobileDevice ? 60 : 15);
+
+            // iPhone/Android are more stable with a short gap between chunks.
+            setTimeout(speakChunk, isMobileDevice ? 110 : 20);
         };
 
-        currentUtterance.onerror = event => {
-            console.warn("Speech synthesis error:", event.error);
+        currentUtterance.onerror = (event) => {
+            if (sequence !== speechSequenceId) return;
 
-            // Some mobile engines occasionally reject a selected voice.
-            // Retry the same chunk once using the device's default voice.
-            if (currentUtterance.voice && sequenceId === speakingSequenceId) {
-                const retryText = chunks[chunkIndex];
-                const retry = new SpeechSynthesisUtterance(retryText);
-                retry.lang = "en-IN";
-                retry.rate = 0.94;
-                retry.pitch = 1.03;
-                retry.volume = 1;
-                retry.onend = () => {
-                    if (sequenceId !== speakingSequenceId) return;
-                    chunkIndex += 1;
-                    setTimeout(speakNextChunk, 60);
-                };
-                retry.onerror = () => {
-                    stopStopCommandRecognition();
-                    setAssistantState("ready");
-                    hideNoorFullscreen();
-                };
-                window.speechSynthesis.resume();
-                window.speechSynthesis.speak(retry);
+            console.warn("Noor speech error:", event.error);
+
+            // Retry once without forcing a selected voice if the platform
+            // rejected the chosen voice.
+            if (preferredVoice) {
+                preferredVoice = null;
+                setTimeout(speakChunk, 100);
                 return;
             }
 
@@ -599,29 +670,51 @@ function speakText(text) {
             hideNoorFullscreen();
         };
 
-        // Android Chrome and iOS Safari are more reliable if resume() is
-        // called immediately before speak().
-        window.speechSynthesis.resume();
-        window.speechSynthesis.speak(currentUtterance);
+        try {
+            synth.resume();
+            synth.speak(currentUtterance);
+        } catch (error) {
+            console.warn("Noor speak failed:", error);
+        }
 
-        // Recovery for mobile browsers that silently pause the TTS engine.
+        // Safari/Chrome mobile occasionally leaves synthesis paused.
         if (isMobileDevice) {
             setTimeout(() => {
                 if (
-                    sequenceId === speakingSequenceId &&
-                    !actuallyStarted &&
-                    !window.speechSynthesis.speaking
+                    sequence === speechSequenceId &&
+                    !started &&
+                    !synth.speaking
                 ) {
                     try {
-                        window.speechSynthesis.resume();
-                        window.speechSynthesis.speak(currentUtterance);
+                        synth.resume();
+                        synth.speak(currentUtterance);
                     } catch (e) {}
                 }
-            }, 700);
+            }, 650);
+
+            // iOS long-speech watchdog.
+            setTimeout(() => {
+                if (
+                    sequence === speechSequenceId &&
+                    synth.paused
+                ) {
+                    try { synth.resume(); } catch (e) {}
+                }
+            }, 1400);
         }
     };
 
-    speakNextChunk();
+    // Crucial mobile handoff:
+    // after microphone recognition ends, allow the browser audio session
+    // a short moment to switch from recording to playback.
+    const startDelay = isIOS ? 420 : (isAndroid ? 260 : 40);
+
+    setTimeout(() => {
+        if (sequence === speechSequenceId) {
+            preferredVoice = getNoorFemaleVoice() || preferredVoice;
+            speakChunk();
+        }
+    }, startDelay);
 }
 
 
@@ -666,76 +759,148 @@ function setAssistantState(state) {
 
 
 /* ---------------------------------------------------
-   SPEECH RECOGNITION
+   SPEECH RECOGNITION - STABLE ONE-SHOT INPUT
+   Works on desktop Chrome/Edge and Android Chrome.
 --------------------------------------------------- */
 
-function setupSpeechRecognition() {
-    const SpeechRecognition =
-        window.SpeechRecognition ||
-        window.webkitSpeechRecognition;
+function getRecognitionConstructor() {
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+function stopQuestionRecognition(resetState = true) {
+    recognitionStarting = false;
+    isListening = false;
+
+    if (recognition) {
+        try {
+            recognition.onresult = null;
+            recognition.onerror = null;
+            recognition.onend = null;
+            recognition.stop();
+        } catch (e) {}
+        recognition = null;
+    }
+
+    if (resetState && !window.speechSynthesis?.speaking) {
+        setAssistantState("ready");
+    }
+}
+
+function startQuestionRecognition() {
+    const SpeechRecognition = getRecognitionConstructor();
 
     if (!SpeechRecognition) {
-        micBtn.addEventListener("click", () => {
-            addBotMessage(
-                "Voice recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge, or type your question.",
-                false
-            );
-        });
-
+        addBotMessage(
+            "Voice input is not supported in this browser. Please type your question. Noor will still speak the answer.",
+            false
+        );
         return;
     }
 
-    recognition = new SpeechRecognition();
+    unlockNoorSpeech();
+    stopNoorSpeech();
 
-    recognition.lang = "en-IN";
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    if (recognitionStarting || isListening) {
+        stopQuestionRecognition();
+        return;
+    }
 
-    recognition.onstart = () => {
+    recognitionStarting = true;
+    const localRecognition = new SpeechRecognition();
+    recognition = localRecognition;
+
+    localRecognition.lang = "en-IN";
+    localRecognition.continuous = false;
+    localRecognition.interimResults = false;
+    localRecognition.maxAlternatives = 1;
+
+    let transcript = "";
+    let receivedResult = false;
+
+    localRecognition.onstart = () => {
+        recognitionStarting = false;
         isListening = true;
         setAssistantState("listening");
     };
 
-    recognition.onresult = event => {
-        const transcript = event.results[0][0].transcript;
+    localRecognition.onresult = event => {
+        receivedResult = true;
+        transcript = (event.results?.[0]?.[0]?.transcript || "").trim();
 
-        questionInput.value = transcript;
-        handleQuestion(transcript);
+        if (transcript) {
+            questionInput.value = transcript;
+        }
+
+        // Do NOT make Noor speak while the microphone is still open.
+        // We wait for onend below.
+        try {
+            localRecognition.stop();
+        } catch (e) {}
     };
 
-    recognition.onerror = event => {
-        console.warn("Speech recognition error:", event.error);
-
+    localRecognition.onerror = event => {
+        console.warn("Question recognition error:", event.error);
+        recognitionStarting = false;
         isListening = false;
+
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+            addBotMessage(
+                "Microphone permission is only needed for Tap to Speak. You can type your question and Noor will still speak normally.",
+                false
+            );
+        } else if (event.error === "no-speech") {
+            voiceSubtext.textContent = "I did not hear anything. Tap the microphone and try again.";
+        } else {
+            voiceSubtext.textContent = "Voice input stopped. Tap the microphone and try again.";
+        }
+
         setAssistantState("ready");
     };
 
-    recognition.onend = () => {
+    localRecognition.onend = () => {
+        recognitionStarting = false;
         isListening = false;
 
-        if (!window.speechSynthesis.speaking) {
+        if (recognition === localRecognition) {
+            recognition = null;
+        }
+
+        if (receivedResult && transcript) {
+            setAssistantState("thinking");
+
+            // Extra release time is important on Android/iPhone after recording.
+            const releaseDelay = isIOS ? 480 : (isAndroid ? 320 : 120);
+
+            setTimeout(() => {
+                handleQuestion(transcript);
+            }, releaseDelay);
+        } else if (!window.speechSynthesis?.speaking) {
             setAssistantState("ready");
         }
     };
 
-    micBtn.addEventListener("click", () => {
-        unlockSpeechEngine();
-        if ("speechSynthesis" in window) {
-            window.speechSynthesis.cancel();
-        }
+    try {
+        localRecognition.start();
+    } catch (error) {
+        console.warn("Recognition start failed:", error);
+        recognitionStarting = false;
+        isListening = false;
+        recognition = null;
+        setAssistantState("ready");
+    }
+}
 
-        hideNoorFullscreen();
-        stopStopCommandRecognition();
+function setupSpeechRecognition() {
+    if (!micBtn) return;
 
-        if (isListening) {
-            recognition.stop();
-            return;
-        }
+    micBtn.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
 
-        try {
-            recognition.start();
-        } catch (error) {
-            console.log(error);
+        if (isListening || recognitionStarting) {
+            stopQuestionRecognition();
+        } else {
+            startQuestionRecognition();
         }
     });
 }
@@ -762,26 +927,12 @@ document.querySelectorAll("[data-question]").forEach(button => {
 });
 
 stopSpeechBtn.addEventListener("click", () => {
-    if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-        speakingSequenceId += 1;
-    }
-
-    stopStopCommandRecognition();
-    setAssistantState("ready");
-    hideNoorFullscreen();
+    stopNoorSpeech();
 });
 
 if (fullscreenStopBtn) {
     fullscreenStopBtn.addEventListener("click", () => {
-        if ("speechSynthesis" in window) {
-            window.speechSynthesis.cancel();
-            speakingSequenceId += 1;
-        }
-
-        stopStopCommandRecognition();
-        setAssistantState("ready");
-        hideNoorFullscreen();
+        stopNoorSpeech();
     });
 }
 
@@ -817,30 +968,17 @@ if (window.matchMedia("(hover: hover)").matches) {
 
 
 
-
-/* ---------------------------------------------------
-   MOBILE SPEECH UNLOCK
-   Required because mobile browsers may block speech that starts
-   after a setTimeout or other asynchronous operation.
---------------------------------------------------- */
-
+/* Unlock Noor's playback directly from meaningful user gestures. */
 [sendBtn, micBtn, stopSpeechBtn, fullscreenStopBtn].forEach(control => {
     if (!control) return;
-    control.addEventListener("pointerdown", unlockSpeechEngine, { passive: true });
-    control.addEventListener("touchstart", unlockSpeechEngine, { passive: true });
+    control.addEventListener("pointerdown", unlockNoorSpeech, { passive: true });
+    control.addEventListener("touchstart", unlockNoorSpeech, { passive: true });
 });
 
 document.querySelectorAll("[data-question]").forEach(button => {
-    button.addEventListener("pointerdown", unlockSpeechEngine, { passive: true });
-    button.addEventListener("touchstart", unlockSpeechEngine, { passive: true });
+    button.addEventListener("pointerdown", unlockNoorSpeech, { passive: true });
+    button.addEventListener("touchstart", unlockNoorSpeech, { passive: true });
 });
-
-questionInput.addEventListener("focus", unlockSpeechEngine, { passive: true });
-questionInput.addEventListener("keydown", unlockSpeechEngine);
-
-// A first tap anywhere on the page can also unlock Noor's voice on mobile.
-document.addEventListener("pointerdown", unlockSpeechEngine, { once: true, passive: true });
-document.addEventListener("touchstart", unlockSpeechEngine, { once: true, passive: true });
 
 
 /* ---------------------------------------------------
@@ -852,12 +990,9 @@ setupStopCommandRecognition();
 
 if ("speechSynthesis" in window) {
     window.speechSynthesis.getVoices();
-
-    if ("onvoiceschanged" in window.speechSynthesis) {
-        window.speechSynthesis.onvoiceschanged = () => {
-            window.speechSynthesis.getVoices();
-        };
-    }
+    window.speechSynthesis.addEventListener?.("voiceschanged", () => {
+        window.speechSynthesis.getVoices();
+    });
 }
 
 setAssistantState("ready");
