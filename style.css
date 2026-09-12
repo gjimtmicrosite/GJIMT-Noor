@@ -158,6 +158,13 @@ button{
     z-index: 1;
     flex-shrink: 0;
 }
+.logo-section img{
+    width: 100%;
+    max-width: 550px;
+    height: auto;
+    object-fit: contain;
+    display: block;
+}
 
 .logo-wrap{
     width:64px;
