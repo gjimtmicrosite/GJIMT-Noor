@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#eef3ff">
+
+<title>Noor | GJIMT AI Admission Assistant</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="ambient-bg">
+    <div class="mesh mesh-1"></div>
+    <div class="mesh mesh-2"></div>
+    <div class="mesh mesh-3"></div>
+    <div class="grid-overlay"></div>
+</div>
+
+<div class="dashboard">
+
+    <!-- HEADER -->
+    <header class="topbar glass-card">
+
+        <div class="logo-section">
+            <div class="logo-wrap">
+                <img src="gjimt_logo.jpg" class="logo" alt="GJIMT Logo">
+            </div>
+
+            <div class="brand-copy">
+                <p class="brand-kicker">GIAN JYOTI INSTITUTE OF MANAGEMENT AND TECHNOLOGY</p>
+                <h1>NOOR <span>AI Admission Assistant</span></h1>
+                <p class="brand-tagline">Guiding Your Journey to the Right Career</p>
+            </div>
+        </div>
+
+        <div class="college-info">
+            <div class="info-pill">
+                <i class="fa-solid fa-phone"></i>
+                <div>
+                    <small>Admissions</small>
+                    <strong>99144-33199</strong>
+                </div>
+            </div>
+
+            <div class="info-pill">
+                <i class="fa-solid fa-location-dot"></i>
+                <div>
+                    <small>Campus</small>
+                    <strong>Phase 2, Mohali</strong>
+                </div>
+            </div>
+        </div>
+
+    </header>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="main-container">
+
+        <!-- NOOR PANEL -->
+        <section class="noor-panel">
+
+            <div class="noor-card glass-card">
+
+                <div class="assistant-badge">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    GJIMT AI GUIDE
+                </div>
+
+                <div class="noor-stage" id="avatarStage">
+
+                    <div class="aura aura-one"></div>
+                    <div class="aura aura-two"></div>
+                    <div class="aura aura-three"></div>
+
+                    <div class="orbit orbit-one">
+                        <span></span>
+                    </div>
+
+                    <div class="orbit orbit-two">
+                        <span></span>
+                    </div>
+
+                    <span class="spark spark-1">✦</span>
+                    <span class="spark spark-2">✧</span>
+                    <span class="spark spark-3">✦</span>
+                    <span class="spark spark-4">✧</span>
+                    <span class="spark spark-5">✦</span>
+                    <span class="spark spark-6">✧</span>
+
+                    <div class="portrait-frame">
+                        <img
+                            id="avatar"
+                            src="noor_ai_face.png"
+                            onerror="this.onerror=null;this.src='robot.jpg';"
+                            alt="Noor - GJIMT AI Admission Assistant">
+                    </div>
+
+                    <div class="voice-equalizer" id="speakingWaves">
+                        <span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                    <div class="voice-bubble" id="voiceBubble">
+                        <i class="fa-solid fa-volume-high"></i>
+                        <span>Speaking</span>
+                    </div>
+
+                </div>
+
+                <div class="noor-name">
+                    <span class="name-dot"></span>
+                    <div>
+                        <h2>Noor</h2>
+                        <p>Your GJIMT AI Admission Assistant</p>
+                    </div>
+                </div>
+
+                <p class="noor-description">
+                    Hello! I’m Noor. Ask me about admissions, courses,
+                    fees, eligibility, placements, scholarships and campus life.
+                </p>
+
+                <div class="status-box">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Ready to Help</span>
+                </div>
+
+                <div class="mini-features">
+                    <span><i class="fa-solid fa-microphone-lines"></i> Voice Enabled</span>
+                    <span><i class="fa-solid fa-bolt"></i> Instant Help</span>
+                    <span><i class="fa-solid fa-language"></i> Easy Guidance</span>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- CHAT PANEL -->
+        <section class="chat-panel glass-card">
+
+            <div class="chat-header">
+
+                <div>
+                    <p class="eyebrow">LIVE ADMISSION HELP</p>
+                    <h2>Talk to Noor</h2>
+                    <p class="chat-subtitle">Ask naturally — by typing or speaking.</p>
+                </div>
+
+                <div class="online-pill">
+                    <span></span>
+                    Online
+                </div>
+
+            </div>
+
+            <div id="chatWindow" class="chat-window">
+
+                <div class="message-row">
+
+                    <div class="message-avatar noor-mini">
+                        <img src="noor_ai_face.png"
+                             onerror="this.onerror=null;this.style.display='none';this.parentElement.innerHTML='<i class=&quot;fa-solid fa-robot&quot;></i>';"
+                             alt="Noor">
+                    </div>
+
+                    <div class="message-bubble bot-bubble">
+                        <strong>👋 Sat Sri Akal! I’m Noor.</strong>
+                        <br><br>
+                        Welcome to GJIMT. I can guide you about:
+                        <br><br>
+                        • BBA Admission<br>
+                        • BCA Admission<br>
+                        • B.Com (Hons.)<br>
+                        • MBA<br>
+                        • MCA<br>
+                        • Fees, Eligibility & Scholarships<br>
+                        • Placements & Campus Life
+                        <br><br>
+                        Tap the microphone or type your question below.
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="suggestion-strip">
+                <button data-question="Tell me about BCA admission">
+                    <i class="fa-solid fa-laptop-code"></i> BCA
+                </button>
+
+                <button data-question="Tell me about BBA admission">
+                    <i class="fa-solid fa-chart-line"></i> BBA
+                </button>
+
+                <button data-question="What is the fee structure?">
+                    <i class="fa-solid fa-indian-rupee-sign"></i> Fees
+                </button>
+
+                <button data-question="Tell me about placements">
+                    <i class="fa-solid fa-briefcase"></i> Placements
+                </button>
+
+                <button data-question="What scholarships are available?">
+                    <i class="fa-solid fa-award"></i> Scholarships
+                </button>
+            </div>
+
+            <div class="chat-input-area">
+
+                <div class="input-shell">
+                    <i class="fa-regular fa-message"></i>
+
+                    <input
+                        id="questionInput"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="Ask Noor your admission question...">
+                </div>
+
+                <button id="sendBtn" class="send-btn" title="Send">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- RIGHT PANEL -->
+        <section class="quick-panel">
+
+            <div class="quick-card glass-card">
+
+                <div class="section-title">
+                    <div>
+                        <p class="eyebrow">ONE TAP HELP</p>
+                        <h3>Quick Actions</h3>
+                    </div>
+
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+
+                <div class="quick-grid">
+
+                    <button class="quick-btn" data-question="Explain the admission process">
+                        <span class="quick-icon"><i class="fa-solid fa-file-signature"></i></span>
+                        <span>Admission Process</span>
+                    </button>
+
+                    <button class="quick-btn" data-question="What courses are offered at GJIMT?">
+                        <span class="quick-icon"><i class="fa-solid fa-graduation-cap"></i></span>
+                        <span>Courses Offered</span>
+                    </button>
+
+                    <button class="quick-btn" data-question="What is the fee structure?">
+                        <span class="quick-icon"><i class="fa-solid fa-indian-rupee-sign"></i></span>
+                        <span>Fee Structure</span>
+                    </button>
+
+                    <button class="quick-btn" data-question="What is the eligibility criteria?">
+                        <span class="quick-icon"><i class="fa-solid fa-user-check"></i></span>
+                        <span>Eligibility</span>
+                    </button>
+
+                    <button class="quick-btn" data-question="Tell me about placements">
+                        <span class="quick-icon"><i class="fa-solid fa-briefcase"></i></span>
+                        <span>Placements</span>
+                    </button>
+
+                    <button class="quick-btn" data-question="What scholarships are available?">
+                        <span class="quick-icon"><i class="fa-solid fa-award"></i></span>
+                        <span>Scholarships</span>
+                    </button>
+
+                    <button class="quick-btn" data-question="Tell me about hostel facilities">
+                        <span class="quick-icon"><i class="fa-solid fa-building"></i></span>
+                        <span>Hostel</span>
+                    </button>
+
+                    <button class="quick-btn" data-question="How can I contact GJIMT?">
+                        <span class="quick-icon"><i class="fa-solid fa-headset"></i></span>
+                        <span>Contact Us</span>
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="stats-card glass-card">
+
+                <div class="section-title">
+                    <div>
+                        <p class="eyebrow">DISCOVER GJIMT</p>
+                        <h3>Institute Highlights</h3>
+                    </div>
+
+                    <i class="fa-solid fa-chart-simple"></i>
+                </div>
+
+                <div class="stats-grid">
+
+                    <div class="stat">
+                        <div class="stat-icon"><i class="fa-solid fa-book-open"></i></div>
+                        <strong>5+</strong>
+                        <span>Programs</span>
+                    </div>
+
+                    <div class="stat">
+                        <div class="stat-icon"><i class="fa-solid fa-user-graduate"></i></div>
+                        <strong>15000+</strong>
+                        <span>Alumni</span>
+                    </div>
+
+                    <div class="stat">
+                        <div class="stat-icon"><i class="fa-solid fa-handshake"></i></div>
+                        <strong>350+</strong>
+                        <span>Recruiters</span>
+                    </div>
+
+                    <div class="stat">
+                        <div class="stat-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                        <strong>25+</strong>
+                        <span>Years</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- KIOSK VOICE BAR -->
+    <div class="voice-bar glass-card">
+
+        <button id="micBtn" class="mic-btn" title="Tap to speak">
+            <span class="mic-ripple"></span>
+            <span class="mic-ripple delay"></span>
+            <i class="fa-solid fa-microphone"></i>
+        </button>
+
+        <div class="voice-copy">
+            <strong id="voiceTitle">Tap to Speak with Noor</strong>
+            <span id="voiceSubtext">Ask your admission question using your voice</span>
+        </div>
+
+        <div class="voice-bars" id="bottomVoiceBars">
+            <span></span><span></span><span></span><span></span><span></span>
+        </div>
+
+        <button id="stopSpeechBtn" class="stop-speech-btn" title="Stop speaking">
+            <i class="fa-solid fa-volume-xmark"></i>
+            <span>Stop Voice</span>
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- FULL-SCREEN NOOR SPEAKING EXPERIENCE -->
+<div id="noorFullscreen" class="noor-fullscreen" aria-hidden="true">
+    <div class="noor-fullscreen-bg"></div>
+
+        <div class="premium-3d-scene" aria-hidden="true">
+            <div class="glass-panel panel-a"></div>
+            <div class="glass-panel panel-b"></div>
+            <div class="glass-panel panel-c"></div>
+
+            <div class="float-orb orb-a"></div>
+            <div class="float-orb orb-b"></div>
+            <div class="float-orb orb-c"></div>
+
+            <div class="holo-ring holo-a"></div>
+            <div class="holo-ring holo-b"></div>
+
+            <div class="light-beam beam-a"></div>
+            <div class="light-beam beam-b"></div>
+
+            <span class="bg-particle p1"></span>
+            <span class="bg-particle p2"></span>
+            <span class="bg-particle p3"></span>
+            <span class="bg-particle p4"></span>
+            <span class="bg-particle p5"></span>
+            <span class="bg-particle p6"></span>
+            <span class="bg-particle p7"></span>
+            <span class="bg-particle p8"></span>
+        </div>
+
+
+    <button id="fullscreenStopBtn" class="fullscreen-stop" type="button" title="Stop Noor">
+        <i class="fa-solid fa-volume-xmark"></i>
+        <span>Stop Voice</span>
+    </button>
+
+    <div class="fullscreen-inner">
+        <div class="fullscreen-speaking-tag">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            NOOR IS SPEAKING
+        </div>
+
+        <div class="fullscreen-noor-stage">
+            <div class="fs-halo fs-halo-one"></div>
+            <div class="fs-halo fs-halo-two"></div>
+            <div class="fs-glow"></div>
+
+            <div class="fs-orbit fs-orbit-one"><span></span></div>
+            <div class="fs-orbit fs-orbit-two"><span></span></div>
+
+            <span class="fs-spark s1">✦</span>
+            <span class="fs-spark s2">✧</span>
+            <span class="fs-spark s3">✦</span>
+            <span class="fs-spark s4">✧</span>
+            <span class="fs-spark s5">✦</span>
+            <span class="fs-spark s6">✧</span>
+
+            <div class="fullscreen-noor-photo">
+                <img src="noor_ai_face.png"
+                     onerror="this.onerror=null;this.src='robot.jpg';"
+                     alt="Noor - AI Admission Assistant">
+            </div>
+
+            <div class="fullscreen-wave">
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span>
+            </div>
+        </div>
+
+        <div class="fullscreen-noor-copy">
+            <h2>Noor</h2>
+            <p>AI Admission Assistant of Gian Jyoti Institute of Management and Technology</p>
+        </div>
+
+        <div id="fullscreenAnswer" class="fullscreen-answer">
+            Noor is speaking your answer...
+        </div>
+
+        <div class="fullscreen-status">
+            <span></span>
+            Please listen to Noor · Voice controls adapt automatically to your device
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
